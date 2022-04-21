@@ -16,23 +16,29 @@ It can be used to check the file directly into a git repo
 If you will be running the `.py` file, you need to install python dependencies:
  ```
  pip install watchdog
- pip install sh
+ pip install git
 ```
-(a superior sub-process module for running command line calls).
+
+I would use `sh` (a superior sub-process module for running command line calls) to circumvent the git dependency but it is not supported on windows.
 
 ## Configuration
 
-This assumes the `regittable-config.json` file is adjacent to `regittable.py`.
+You need to point `regittable.py` to a JSON config file. By default, regittable looks for `regittable-config.json` adjacent to the `regittable.py` file, but it can be any JSON file, placed anywhere with a path passed in at invocation.
 
 Set the `db_root_rel_path` var to the absolute (or relative to the `regittable.py` location) path to your local Dropbox folder root contents.
 
 Create a configuration object for each reMarkable notebook or file you sync to Dropbox.
 ```
 {
-  name: "quick_notes",
-  destination: "./reMarkableNotes/*",
-  git_mode: {"none"},
-  clear: ""
+  "watch_path": "C:\\Users\\kOrc\\Dropbox\\",
+  "objects": [
+    {
+      "name": "quick_notes",
+      "destination": "./reMarkableNotes/*",
+      "git_mode": "none",
+      "clear": ""
+    }
+  ]
 }
 ```
 

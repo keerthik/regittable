@@ -1,0 +1,11 @@
+{
+  "watch_path": "C:\\Users\\kOrc\\Dropbox\\",
+  "files": [
+    {
+      "name": "taste",
+      "destination": "./reMarkableNotes/*",
+      "git_mode": "none",
+      "clear": ""
+    }
+  ]
+}
