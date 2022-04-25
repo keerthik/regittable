@@ -1,6 +1,8 @@
 # Regittable
 
-Regittable (or reGittable) is a tool for the [reMarkable 2](https://remarkable.com/) tablet together with the [Dropbox integration](https://support.remarkable.com/hc/en-us/articles/4406214540945-Integrating-with-Google-Drive-Dropbox-and-OneDrive) using a `json` config file and run from an always-on device (or one that runs the script upon startup, see below).
+Regittable (or reGittable) is a watchdog script, designed for the [reMarkable 2](https://remarkable.com/) tablet to automatically commit sync'd files to desired git repositories. 
+
+Regittable is fundamentally designed for use with the [Dropbox integration](https://support.remarkable.com/hc/en-us/articles/4406214540945-Integrating-with-Google-Drive-Dropbox-and-OneDrive) using a `json` config file and run from an always-on device (or one that runs the script upon startup, see below), but can be used in a variety of other circumstances and setups as well.
 
 
 ## Usage options
@@ -30,10 +32,10 @@ Set the `db_root_rel_path` var to the absolute (or relative to the `regittable.p
 Create a configuration object for each reMarkable notebook or file you sync to Dropbox.
 ```
 {
-  "watch_path": "C:\\Users\\kOrc\\Dropbox\\",
-  "objects": [
+  "watch_path": "C:\\Users\\keerthik\\Dropbox\\",
+  "files": [
     {
-      "name": "quick_notes",
+      "name": "quick notes",
       "destination": "./reMarkableNotes/*",
       "git_mode": "none",
       "clear": ""
