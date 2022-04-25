@@ -7,6 +7,9 @@ from watchdog.observers import Observer
 from watchdog.events import *
 
 
+def safepath(inpath):
+  return Path(PurePath(inpath).as_posix()).expanduser().resolve()
+
 def safejoin(path1, path2):
   path1 = PurePath(PurePath(path1).as_posix())
   path2 = PurePath(PurePath(path2).as_posix())
@@ -17,6 +20,7 @@ class ConfigLoader(munch.Munch):
     with open(config_path, 'r') as config_file:
       config_json = json.load(config_file)
     munch.Munch.__init__(self, config_json)
+    self.watch_path = safepath(self.watch_path)
     self.files = munch.munchify(self.files)
 
 
@@ -27,7 +31,16 @@ class RegitHandler(FileSystemEventHandler):
   """
   def __init__(self, config, case_sensitive=True):
     FileSystemEventHandler.__init__(self)
+    self._ignore_directories=True
     self.update_config(config)
+
+  @property
+  def ignore_directories(self):
+    """
+    (Read-only)
+    ``True`` if directories should be ignored; ``False`` otherwise.
+    """
+    return self._ignore_directories
   
   def update_config(self, config):
     self._watchpath = config.watch_path
@@ -39,23 +52,21 @@ class RegitHandler(FileSystemEventHandler):
     logging.info("Modified %s: %s", what, event.src_path)
 
   def on_modified(self, event):
+    # Maybe this shouldn't get triggered on delete, or move?
     super().on_modified(event)
-    what = 'directory' if event.is_directory else 'file'
-    logging.info("Modified %s: %s", what, event.src_path)
     src = Path(event.src_path)
     if not src.exists():
-      logging.info(f"{src} does not exist, maybe already moved?")
+      return
     file = self.first_match(event)
     if "none" == file.git_mode:
       destination = safejoin(self._watchpath, file.destination)
       if '*' in destination.name:
         destination = destination.with_name(file.name)
-
-      print ("Moving file to ", destination)
       try:
         src.replace(destination)
+        logging.info(f"Moving file to {destination}")
       except:
-        logging.info("Warning: source probably does not exist")
+        logging.debug("Warning: source probably does not exist")
       
   def first_match(self, event):
     for file in self._files:
@@ -69,6 +80,8 @@ class RegitHandler(FileSystemEventHandler):
 
   def event_has_match(self, event):
     match = 0
+    if self.ignore_directories and event.is_directory:
+      return False
     if hasattr(event, 'src_path'):
       match += sum([f"{file.name}" in f"{event.src_path}" for file in self._files]) > 0
     if hasattr(event, 'dest_path'):
@@ -84,8 +97,14 @@ class RegitHandler(FileSystemEventHandler):
     :type event:
         :class:`FileSystemEvent`
     """
-    if self.event_has_match(event):
-      self.on_any_event(event)
+    # if self.event_has_match(event):
+    self.on_any_event(event)
+
+    what = 'directory' if event.is_directory else 'file'
+    if not self.event_has_match(event):
+      logging.debug("Modified %s: %s, but not a config match", what, event.src_path)
+    else:
+      logging.info("Modified %s: %s", what, event.src_path)
       _method_map = {
         EVENT_TYPE_MODIFIED: self.on_modified,
         EVENT_TYPE_MOVED: self.on_moved,
@@ -108,9 +127,13 @@ if __name__ == "__main__":
 
   if args.verbose:
     print ("Verbose logging enabled...")
-    logging.basicConfig(level=logging.INFO,
+    logging.basicConfig(level=logging.DEBUG,
                       format='%(asctime)s - %(message)s',
                       datefmt='%Y-%m-%d %H:%M:%S')
+
+  logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
 
   config = reload_config(args.config_path)
   # event_handler = LoggingEventHandler()
@@ -122,10 +145,10 @@ if __name__ == "__main__":
 
   try:
     while True:
-      print ("i sleep")
+      logging.debug("i sleep")
       time.sleep(1)
   except KeyboardInterrupt:
-    print ("i stop")
+    logging.debug("i stop")
     src_observer.stop()
 
   src_observer.join()
