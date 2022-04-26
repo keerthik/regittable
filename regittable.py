@@ -1,6 +1,6 @@
 import argparse, json, munch
 import logging, time, sys
-import os, shutil
+import shutil
 
 from pathlib import PurePath, Path
 from watchdog.observers import Observer
@@ -21,6 +21,10 @@ class ConfigLoader(munch.Munch):
       config_json = json.load(config_file)
     munch.Munch.__init__(self, config_json)
     self.watch_path = safepath(self.watch_path)
+    for file in self.files:
+      file.setdefault('git_mode',     "none")
+      file.setdefault('auto_delete',  "false")
+      file.setdefault('consumed',     False)
     self.files = munch.munchify(self.files)
 
 
@@ -29,6 +33,22 @@ class RegitHandler(FileSystemEventHandler):
   The RegitHandler looks for changes to the specific files
   that we are interested in, and doing specific actions based on that
   """
+
+  def log_event(self, event):
+    _event_map = {
+      EVENT_TYPE_MODIFIED: "Modified",
+      EVENT_TYPE_MOVED: "Moved",
+      EVENT_TYPE_CREATED: "Created",
+      EVENT_TYPE_DELETED: "Deleted",
+    }
+    what = 'directory' if event.is_directory else 'file'
+    matching = ''
+    if self.event_has_match(event):
+      matching = 'consumed' if self.first_match(event).consumed else 'not consumed yet'
+    else:
+      matching = 'but not a match'
+    logging.debug("%s: %s @%s, %s", _event_map[event.event_type], what, event.src_path, matching)
+
   def __init__(self, config, case_sensitive=True):
     FileSystemEventHandler.__init__(self)
     self._ignore_directories=True
@@ -46,28 +66,6 @@ class RegitHandler(FileSystemEventHandler):
     self._watchpath = config.watch_path
     self._files = config.files
 
-  def on_created(self, event):
-    super().on_modified(event)
-    what = 'directory' if event.is_directory else 'file'
-    logging.info("Modified %s: %s", what, event.src_path)
-
-  def on_modified(self, event):
-    # Maybe this shouldn't get triggered on delete, or move?
-    super().on_modified(event)
-    src = Path(event.src_path)
-    if not src.exists():
-      return
-    file = self.first_match(event)
-    if "none" == file.git_mode:
-      destination = safejoin(self._watchpath, file.destination)
-      if '*' in destination.name:
-        destination = destination.with_name(file.name)
-      try:
-        src.replace(destination)
-        logging.info(f"Moving file to {destination}")
-      except:
-        logging.debug("Warning: source probably does not exist")
-      
   def first_match(self, event):
     for file in self._files:
       match = 0
@@ -89,6 +87,48 @@ class RegitHandler(FileSystemEventHandler):
     # print (self._files[0].name, event.src_path, self._files[0].name in event.src_path)
     return match > 0
 
+  def consume_event(self, event):
+    src = Path(event.src_path)
+    if not src.exists():
+      return
+    file = self.first_match(event)
+    if file.consumed:
+      logging.info("[regit] Resetting file status")
+      file.consumed = False
+      return
+    destination = safejoin(self._watchpath, file.destination)
+    if '*' in destination.name:
+      destination = destination.with_name(file.name)
+    # try:
+    _do_move = "true"==file.auto_delete.lower()
+    src.replace(destination) if _do_move else shutil.copyfile(src, destination)
+    action = 'moving' if _do_move else 'copying'
+    logging.info(f"[regit] {action} file to {destination}...")
+    if "none" == file.git_mode.lower():
+      logging.info("[regit] ...finished")
+    file.consumed = True
+    # except:
+    #   logging.debug("Warning: source probably does not exist")
+
+  def on_created(self, event):
+    super().on_created(event)
+    self.log_event(event)
+    self.consume_event(event)
+
+  def on_moved(self, event):
+    super().on_moved(event)
+    self.log_event(event)
+    self.consume_event(event)
+
+  def on_deleted(self, event):
+    super().on_deleted(event)
+    # self.log_event(event)
+
+  def on_modified(self, event):
+    super().on_modified(event)
+    self.log_event(event)
+    self.consume_event(event)
+      
   def dispatch(self, event):
     """Dispatches events to the appropriate methods.
 
@@ -100,11 +140,8 @@ class RegitHandler(FileSystemEventHandler):
     # if self.event_has_match(event):
     self.on_any_event(event)
 
-    what = 'directory' if event.is_directory else 'file'
-    if not self.event_has_match(event):
-      logging.debug("Modified %s: %s, but not a config match", what, event.src_path)
-    else:
-      logging.info("Modified %s: %s", what, event.src_path)
+    if self.event_has_match(event):
+      self.log_event(event)
       _method_map = {
         EVENT_TYPE_MODIFIED: self.on_modified,
         EVENT_TYPE_MOVED: self.on_moved,
@@ -146,7 +183,7 @@ if __name__ == "__main__":
   try:
     while True:
       logging.debug("i sleep")
-      time.sleep(1)
+      time.sleep(5)
   except KeyboardInterrupt:
     logging.debug("i stop")
     src_observer.stop()

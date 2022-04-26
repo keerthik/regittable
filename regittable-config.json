@@ -5,7 +5,7 @@
       "name": "taste.txt",
       "destination": "./reMarkable/*",
       "git_mode": "none",
-      "clear": ""
+      "auto_delete": "false"
     }
   ]
 }
