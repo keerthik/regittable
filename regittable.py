@@ -5,7 +5,7 @@ import shutil
 from pathlib import PurePath, Path
 from watchdog.observers import Observer
 from watchdog.events import *
-
+from gitops import GitOps
 
 def safepath(inpath):
   return Path(PurePath(inpath).as_posix()).expanduser().resolve()
@@ -33,6 +33,10 @@ class RegitHandler(FileSystemEventHandler):
   The RegitHandler looks for changes to the specific files
   that we are interested in, and doing specific actions based on that
   """
+  def __init__(self, config, case_sensitive=True):
+    FileSystemEventHandler.__init__(self)
+    self._ignore_directories=True
+    self.update_config(config)
 
   def log_event(self, event):
     _event_map = {
@@ -48,11 +52,6 @@ class RegitHandler(FileSystemEventHandler):
     else:
       matching = 'but not a match'
     logging.debug("%s: %s @%s, %s", _event_map[event.event_type], what, event.src_path, matching)
-
-  def __init__(self, config, case_sensitive=True):
-    FileSystemEventHandler.__init__(self)
-    self._ignore_directories=True
-    self.update_config(config)
 
   @property
   def ignore_directories(self):
@@ -96,16 +95,44 @@ class RegitHandler(FileSystemEventHandler):
       logging.info("[regit] Resetting file status")
       file.consumed = False
       return
-    destination = safejoin(self._watchpath, file.destination)
+    destination_dir = safejoin(self._watchpath, file.destination)
+    destination = destination_dir
     if '*' in destination.name:
       destination = destination.with_name(file.name)
+      destination_dir = destination.parent
+    
+    logging.info(f"[regit] will send file to {destination_dir}")
     # try:
     _do_move = "true"==file.auto_delete.lower()
-    src.replace(destination) if _do_move else shutil.copyfile(src, destination)
     action = 'moving' if _do_move else 'copying'
-    logging.info(f"[regit] {action} file to {destination}...")
+
+    tries = 0
+    error = 1
+    while error != None and tries < 10:
+      tries += 1
+      try:
+        logging.info(f"[regit] {action} file to {destination}...")
+        shutil.move(src, destination) if _do_move else shutil.copyfile(src, destination)
+        error = None
+      except Exception as oserror:
+        logging.info(f"[regit] {tries}/10 Unable to {action} {file.name}, perhaps simultaneously used by something else")
+        logging.debug(oserror)
+        file.consumed = False
+        error = oserror
+        try:
+          time.sleep(5)
+        except KeyboardInterrupt:
+          logging.debug ("terminated while failing to respect file")
+
+
     if "none" == file.git_mode.lower():
       logging.info("[regit] ...finished")
+    elif "commit-current" == file.git_mode.lower():
+      gitter = GitOps(destination_dir)
+      gitter.cmd(f"git status")
+      gitter.cmd(f'git add {file.name}')
+      gitter.cmd(f'git commit -a -m "Updating {file.name}"')
+
     file.consumed = True
     # except:
     #   logging.debug("Warning: source probably does not exist")

@@ -2,9 +2,9 @@
   "watch_path": "C:\\Users\\kOrc\\Dropbox\\",
   "files": [
     {
-      "name": "taste.txt",
-      "destination": "./reMarkable/*",
-      "git_mode": "none",
+      "name": "taste.pdf",
+      "destination": "D:\\dev\\narrative\\tastegame\\*",
+      "git_mode": "commit-current",
       "auto_delete": "false"
     }
   ]

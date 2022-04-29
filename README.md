@@ -18,8 +18,7 @@ It can be used to check the file directly into a git repo
 If you will be running the `.py` file, you need to install python dependencies:
  ```
  pip install watchdog
- pip install git
-```
+ ```
 
 I would use `sh` (a superior sub-process module for running command line calls) to circumvent the git dependency but it is not supported on windows.
 
@@ -47,6 +46,7 @@ Create a configuration object for each reMarkable notebook or file you sync to D
 Append `/*` to your destination path if you want to preserve the filename as set by your reMarkable sync. You can hard-code this filename too.
 
 Set `git_mode` to any of 
+- `none`: no git operations.
 - `pull-request`: submits a pull-request to the repo, from a branch named as in `commit-branch`.
 - `commit-branch`: commits in a branch. Default branch name is of format `$filename$hhmmss$ddmmyyyy`
 - `commit-current`: makes a commit in the current repo branch
