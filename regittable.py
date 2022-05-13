@@ -1,4 +1,4 @@
-import argparse, json, munch
+import argparse
 import logging, time, sys
 import shutil
 
@@ -6,26 +6,17 @@ from pathlib import PurePath, Path
 from watchdog.observers import Observer
 from watchdog.events import *
 from gitops import GitOps
+from utils import safepath, safejoin, JSONLoader
 
-def safepath(inpath):
-  return Path(PurePath(inpath).as_posix()).expanduser().resolve()
-
-def safejoin(path1, path2):
-  path1 = PurePath(PurePath(path1).as_posix())
-  path2 = PurePath(PurePath(path2).as_posix())
-  return Path(path1.joinpath(path2))
-
-class ConfigLoader(munch.Munch):
+class ConfigLoader(JSONLoader):
   def __init__(self, config_path):
-    with open(config_path, 'r') as config_file:
-      config_json = json.load(config_file)
-    munch.Munch.__init__(self, config_json)
+    JSONLoader.__init__(self, config_path)
     self.watch_path = safepath(self.watch_path)
     for file in self.files:
       file.setdefault('git_mode',     "none")
       file.setdefault('auto_delete',  "false")
       file.setdefault('consumed',     False)
-    self.files = munch.munchify(self.files)
+    self.nested_object('files')
 
 
 class RegitHandler(FileSystemEventHandler):

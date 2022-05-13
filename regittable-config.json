@@ -3,8 +3,14 @@
   "files": [
     {
       "name": "taste.pdf",
-      "destination": "D:\\dev\\narrative\\tastegame\\*",
+      "destination": "A:\\dev\\narrative\\tastegame\\notes\\*",
       "git_mode": "commit-current",
+      "auto_delete": "false"
+    },
+    {
+      "name": "test.txt",
+      "destination": "A:\\dev\\tools\\remarkable\\regittable-test.txt",
+      "git_mode": "none",
       "auto_delete": "false"
     }
   ]

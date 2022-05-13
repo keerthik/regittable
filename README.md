@@ -4,19 +4,22 @@ Regittable (or reGittable) is a watchdog script, designed for the [reMarkable 2]
 
 Regittable is fundamentally designed for use with the [Dropbox integration](https://support.remarkable.com/hc/en-us/articles/4406214540945-Integrating-with-Google-Drive-Dropbox-and-OneDrive) using a `json` config file and run from an always-on device (or one that runs the script upon startup, see below), but can be used in a variety of other circumstances and setups as well.
 
+It is designed for use on a Windows or OSX machine.
+
 
 ## Usage options
 
-In the simplest case, Regittable can be configured to automatically move a remarkable file after sync to a specified destination folder from your Dropbox root where it will be synced.
+In the simplest case, Regittable can be configured to automatically move a remarkable file after sync to a specified destination folder from your Dropbox root where it will be synced, on the device running Regittable.
 
 Note: the destination can be a Dropbox subfolder, as a workaround to the reMarkable Dropbox integration limitation where it [can only sync to the Dropbox root folder](https://www.reddit.com/r/RemarkableTablet/comments/shxbbv/is_there_a_way_to_upload_a_file_to_a_dropbox/).
 
-It can be used to check the file directly into a git repo 
+The core intended use case is to commit a pdf (or an update to it) to a git repo at a different path for version control and use in different projects.
 
 ## Setup
 
 If you will be running the `.py` file, you need to install python dependencies:
  ```
+ pip install munch
  pip install watchdog
  ```
 
@@ -29,6 +32,7 @@ You need to point `regittable.py` to a JSON config file. By default, regittable 
 Set the `db_root_rel_path` var to the absolute (or relative to the `regittable.py` location) path to your local Dropbox folder root contents.
 
 Create a configuration object for each reMarkable notebook or file you sync to Dropbox.
+
 ```
 {
   "watch_path": "C:\\Users\\keerthik\\Dropbox\\",
@@ -37,7 +41,7 @@ Create a configuration object for each reMarkable notebook or file you sync to D
       "name": "quick notes",
       "destination": "./reMarkableNotes/*",
       "git_mode": "none",
-      "clear": ""
+      "auto_delete": "false"
     }
   ]
 }
@@ -45,12 +49,15 @@ Create a configuration object for each reMarkable notebook or file you sync to D
 
 Append `/*` to your destination path if you want to preserve the filename as set by your reMarkable sync. You can hard-code this filename too.
 
-Set `git_mode` to any of 
-- `none`: no git operations.
-- `pull-request`: submits a pull-request to the repo, from a branch named as in `commit-branch`.
-- `commit-branch`: commits in a branch. Default branch name is of format `$filename$hhmmss$ddmmyyyy`
-- `commit-current`: makes a commit in the current repo branch
-- `push-current`: makes a commit and attempts a push to the current repo branch
+Note: All absolute and relative paths *should* be safe to mix between Windows and \*nix styles, however special paths like `/` and `~/` probably won't resolve correctly cross-platform.
 
+Set `git_mode` to any of 
+- [x] `none`: no git operations. Can be used to move files
+- [ ] `pull-request`: submits a pull-request to the repo, from a branch named as in `commit-branch`.
+- [ ] `commit-branch`: commits in a branch. Default branch name is of format `$filename$hhmm$ddmmyyyy`. Multiple updates within this minute will be committed to the same branch
+- [x] `commit-current`: makes a commit in the current repo branch
+- [ ] `push-current`: makes a commit and attempts a push to the current repo branch
+
+Only checked features are implemented.
 
 If your computer may restart, consider setting the script to run on startup (eg: [Windows](https://stackoverflow.com/questions/4438020/how-to-start-a-python-file-while-windows-starts)).

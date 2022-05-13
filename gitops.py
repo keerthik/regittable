@@ -1,8 +1,6 @@
 import os
 from subprocess import check_output
 
-tasterepo = "D:\\dev\\narrative\\tastegame"
-
 class GitOps:
   def __init__(self, repopath):
     self.wd_cache = os.getcwd()
@@ -14,10 +12,3 @@ class GitOps:
     print(result.decode())
     os.chdir(self.wd_cache)
     return result
-
-ops = GitOps(tasterepo)
-ops.cmd("git status")
-
-# os.chdir(tasterepo)
-# print (check_output("git status", shell=True).decode())
-
