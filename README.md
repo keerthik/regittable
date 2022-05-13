@@ -6,8 +6,16 @@ Regittable is fundamentally designed for use with the [Dropbox integration](http
 
 It is designed for use on a Windows or OSX machine.
 
+## Usage
+Place your config `.json` file anywhere on the machine, and reference it when running regittable:
+```
+$ python3 /path/to/regittable/regittable.py --help
+$ python3 /path/to/regittable/regittable.py /path/to/regittable-config.json
+```
 
-## Usage options
+If your computer may restart, consider setting the script to run on startup (eg: [Windows](https://stackoverflow.com/questions/4438020/how-to-start-a-python-file-while-windows-starts)).
+
+## Use cases
 
 In the simplest case, Regittable can be configured to automatically move a remarkable file after sync to a specified destination folder from your Dropbox root where it will be synced, on the device running Regittable.
 
@@ -60,4 +68,4 @@ Set `git_mode` to any of
 
 Only checked features are implemented.
 
-If your computer may restart, consider setting the script to run on startup (eg: [Windows](https://stackoverflow.com/questions/4438020/how-to-start-a-python-file-while-windows-starts)).
+A sample `regittable-config.json` file is included in the repository demonstrating existing features.

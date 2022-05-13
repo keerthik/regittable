@@ -176,7 +176,7 @@ def reload_config(config_path):
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Run a watchdog to sync reMarkable files with folders or git repositories.\nhttps://github.com/keerthik/regittable")
-  parser.add_argument('config_path', nargs='?', type=Path, default="regittable-config.json", help="The config file specifying what to watch and what to do with changes")
+  parser.add_argument('config_path', nargs='?', type=Path, default="regittable-config.json", help="Path to the config file specifying what to watch and what to do with changes")
   parser.add_argument('-v', dest='verbose', action='store_true', help="Enable verbose logging in the process window, if open")
   args = parser.parse_args()
 
