@@ -39,7 +39,7 @@ You need to point `regittable.py` to a JSON config file. By default, regittable 
 
 Set the `db_root_rel_path` var to the absolute (or relative to the `regittable.py` location) path to your local Dropbox folder root contents.
 
-Create a configuration object for each reMarkable notebook or file you sync to Dropbox.
+Create a configuration file element for each reMarkable notebook or file you sync to Dropbox.
 
 ```
 {
